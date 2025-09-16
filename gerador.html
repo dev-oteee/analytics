@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Gerador de Relatórios</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body { 
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+      color: #333;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+      align-items: start;
+    }
+
+    .form-section, .report-section {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 30px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    h1 {
+      text-align: center;
+      color: #fff;
+      font-size: 2.5em;
+      font-weight: 300;
+      margin-bottom: 40px;
+      grid-column: 1 / -1;
+      text-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    .form-section h2 {
+      color: #4a5568;
+      font-size: 1.8em;
+      margin-bottom: 25px;
+      text-align: center;
+      position: relative;
+    }
+
+    .form-section h2::after {
+      content: '';
+      position: absolute;
+      bottom: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 60px;
+      height: 3px;
+      background: linear-gradient(90deg, #667eea, #764ba2);
+      border-radius: 2px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+
+    label { 
+      display: flex;
+      flex-direction: column;
+      font-weight: 600;
+      color: #2d3748;
+      font-size: 0.95em;
+    }
+
+    input { 
+      margin-top: 8px;
+      padding: 15px 18px;
+      border: 2px solid #e2e8f0;
+      border-radius: 12px;
+      font-size: 16px;
+      transition: all 0.3s ease;
+      background: #f7fafc;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: #667eea;
+      background: #fff;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+      transform: translateY(-2px);
+    }
+
+    input:hover {
+      border-color: #cbd5e0;
+      background: #fff;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 15px;
+      margin-top: 30px;
+    }
+
+    button { 
+      padding: 18px 40px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 50px;
+      font-size: 18px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+      position: relative;
+      overflow: hidden;
+      flex: 1;
+    }
+
+    button::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transition: left 0.5s;
+    }
+
+    button:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 15px 35px rgba(102, 126, 234, 0.4);
+    }
+
+    button:hover::before {
+      left: 100%;
+    }
+
+    button:active {
+      transform: translateY(-1px);
+    }
+
+    .download-btn {
+      background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+      box-shadow: 0 8px 25px rgba(72, 187, 120, 0.3);
+    }
+
+    .download-btn:hover {
+      box-shadow: 0 15px 35px rgba(72, 187, 120, 0.4);
+    }
+
+    #relatorio { 
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 30px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      min-height: 200px;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.5s ease;
+    }
+
+    #relatorio.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .relatorio-texto {
+      background: #f8f9fa;
+      border: 2px dashed #667eea;
+      border-radius: 15px;
+      padding: 25px;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      line-height: 1.6;
+      color: #2d3748;
+      white-space: pre-line;
+      overflow-wrap: break-word;
+      max-height: 400px;
+      overflow-y: auto;
+      position: relative;
+    }
+
+    .copy-button {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: #667eea;
+      color: white;
+      border: none;
+      padding: 8px 15px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      z-index: 10;
+    }
+
+    .copy-button:hover {
+      background: #5a6fd8;
+      transform: scale(1.05);
+    }
+
+    .copy-success {
+      background: #48bb78 !important;
+    }
+
+    h2 { 
+      color: #4a5568;
+      font-size: 1.8em;
+      margin-bottom: 25px;
+      text-align: center;
+      position: relative;
+    }
+
+    h2::after {
+      content: '';
+      position: absolute;
+      bottom: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 60px;
+      height: 3px;
+      background: linear-gradient(90deg, #667eea, #764ba2);
+      border-radius: 2px;
+    }
+
+    .empty-report {
+      text-align: center;
+      color: #a0aec0;
+      font-size: 1.1em;
+      padding: 40px 20px;
+    }
+
+    .empty-report::before {
+      content: "📊";
+      display: block;
+      font-size: 4em;
+      margin-bottom: 20px;
+      opacity: 0.3;
+    }
+
+    /* Canvas oculto para gerar a imagem */
+    #reportCanvas {
+      display: none;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        grid-template-columns: 1fr;
+        gap: 20px;
+      }
+      
+      h1 {
+        font-size: 2em;
+        margin-bottom: 30px;
+      }
+      
+      .form-section, .report-section {
+        padding: 20px;
+      }
+      
+      .button-group {
+        flex-direction: column;
+      }
+    }
+
+    @keyframes slideInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .form-section {
+      animation: slideInUp 0.6s ease;
+    }
+
+    .report-section {
+      animation: slideInUp 0.8s ease;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Gerador de Relatórios</h1>
+    
+    <div class="form-section">
+      <h2>📋 Dados do Relatório</h2>
+      <form id="formulario">
+        <div class="form-grid">
+          <label>Nome: <input type="text" name="Nome"></label>
+          <label>Relatório de Performance referente Período: <input type="text" name="Período"></label>
+          <label>Alcance: <input type="text" name="Alcance"></label>
+          <label>Visitas ao perfil: <input type="text" name="Visitas ao perfil"></label>
+          <label>Conversas iniciadas: <input type="text" name="Conversas iniciadas"></label>
+          <label>Custo por conversas: <input type="text" name="Custo por conversas"></label>
+          <label>Compras efetuadas: <input type="text" name="Compras efetuadas"></label>
+          <label>Custo por Compras: <input type="text" name="Custo por Compras"></label>
+          <label>Adições ao Carrinho: <input type="text" name="Adições ao Carrinho"></label>
+          <label>Custo por adição: <input type="text" name="Custo por adição"></label>
+          <label>CTR (taxa de cliques): <input type="text" name="CTR"></label>
+          <label>CPM (custo por mil impressões): <input type="text" name="CPM"></label>
+          <label>CPC (Custo por cliques): <input type="text" name="CPC"></label>
+          <label>Valor investido: <input type="text" name="Valor investido"></label>
+        </div>
+        <div class="button-group">
+          <button type="button" onclick="gerarRelatorio()">✨ Gerar Relatório</button>
+          <button type="button" class="download-btn" onclick="gerarRelatorioVisual()">📸 Download Visual</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="report-section">
+      <div id="relatorio">
+        <div class="empty-report">
+          Preencha os campos e clique em "Gerar Relatório" para visualizar os dados
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <canvas id="reportCanvas" width="1200" height="1600"></canvas>
+
+  <script>
+    function gerarRelatorio() {
+      const form = document.getElementById('formulario');
+      const dados = new FormData(form);
+      const relatorioDiv = document.getElementById('relatorio');
+      
+      const emojis = {
+        'Nome': '👤',
+        'Período': '📅',
+        'Alcance': '📢',
+        'Visitas ao perfil': '👁️',
+        'Conversas iniciadas': '💬',
+        'Custo por conversas': '💰',
+        'Compras efetuadas': '🛒',
+        'Custo por Compras': '💳',
+        'Adições ao Carrinho': '🛍️',
+        'Custo por adição': '💸',
+        'CTR': '👆',
+        'CPM': '📊',
+        'CPC': '🖱️',
+        'Valor investido': '💵'
+      };
+      
+      const nomeCliente = dados.get('Nome') ? dados.get('Nome').trim() : '';
+      
+      let relatorioTexto = "📋 Relatório de Performance\n";
+      
+      if (nomeCliente) {
+        relatorioTexto += `👤 Cliente: ${nomeCliente}\n`;
+      }
+      
+      relatorioTexto += "================================\n\n";
+      
+      let hasData = false;
+      
+      for (let [campo, valor] of dados.entries()) {
+        if (valor.trim() !== "") {
+          hasData = true;
+          const emoji = emojis[campo] || '📌';
+          if (campo !== 'Nome') {
+            relatorioTexto += `${emoji} ${campo}: ${valor}\n`;
+          }
+        }
+      }
+      
+      if (!hasData) {
+        relatorioDiv.innerHTML = `<div class="empty-report">
+          Nenhum dado foi preenchido. Por favor, preencha pelo menos um campo.
+        </div>`;
+      } else {
+        relatorioTexto += "\n--------------------------------\n";
+        relatorioTexto += "✅ Relatório gerado com sucesso!";
+        
+        relatorioDiv.innerHTML = `
+          <h2>📊 Relatório Gerado</h2>
+          <div class="relatorio-texto">
+            <button class="copy-button" onclick="copiarRelatorio()" id="copyBtn">📋 Copiar</button>
+            ${relatorioTexto}
+          </div>
+        `;
+      }
+      
+      relatorioDiv.classList.add('show');
+      relatorioDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      window.relatorioParaCopia = relatorioTexto;
+    }
+
+    function gerarRelatorioVisual() {
+      const form = document.getElementById('formulario');
+      const dados = new FormData(form);
+      
+      let hasData = false;
+      for (let [campo, valor] of dados.entries()) {
+        if (valor.trim() !== "") {
+          hasData = true;
+          break;
+        }
+      }
+      
+      if (!hasData) {
+        alert('Por favor, preencha pelo menos um campo antes de gerar o relatório visual.');
+        return;
+      }
+      
+      const canvas = document.getElementById('reportCanvas');
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      const img = new Image();
+      img.onload = function () {
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        desenharConteudoRelatorioModerno(dados, ctx, canvas);
+      };
+      
+      // Fallback para quando não há imagem de background
+      img.onerror = function() {
+        // Criar um gradiente moderno como fallback
+        const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+        gradient.addColorStop(0, '#667eea');
+        gradient.addColorStop(1, '#764ba2');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        desenharConteudoRelatorioModerno(dados, ctx, canvas);
+      };
+      
+      img.src = 'img/bg.png';
+    }
+
+    function desenharConteudoRelatorioModerno(dados, ctx, canvas) {
+      // Overlay com gradient escuro sophisticado
+      const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      gradient.addColorStop(0, 'rgba(0, 0, 0, 0.7)');
+      gradient.addColorStop(0.3, 'rgba(16, 10, 32, 0.8)');
+      gradient.addColorStop(1, 'rgba(0, 0, 0, 0.9)');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Header principal com design material
+      drawMaterialHeader(ctx, dados);
+      
+      // Cards de métricas em liquid glass
+      drawLiquidGlassCards(ctx, dados);
+      
+      // Footer com branding corporativo
+      drawCorporateFooter(ctx);
+    }
+
+    function drawMaterialHeader(ctx, dados) {
+      // Material Design elevated surface com liquid glass
+      ctx.fillStyle = 'rgba(25, 15, 45, 0.85)';
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+      ctx.shadowBlur = 40;
+      ctx.shadowOffsetY = 20;
+      materialRect(ctx, 80, 80, 1040, 200, 24);
+      ctx.fill();
+      
+      // Liquid glass border effect
+      ctx.strokeStyle = 'rgba(147, 51, 234, 0.4)';
+      ctx.lineWidth = 1.5;
+      materialRect(ctx, 80, 80, 1040, 200, 24);
+      ctx.stroke();
+      
+      // Reset shadow
+      ctx.shadowColor = 'transparent';
+      ctx.shadowBlur = 0;
+      ctx.shadowOffsetY = 0;
+      
+      // Gradient accent line - Material Design style
+      const accentGradient = ctx.createLinearGradient(80, 80, 1120, 80);
+      accentGradient.addColorStop(0, 'rgba(147, 51, 234, 0)');
+      accentGradient.addColorStop(0.3, '#9333ea');
+      accentGradient.addColorStop(0.7, '#7c3aed');
+      accentGradient.addColorStop(1, 'rgba(124, 58, 237, 0)');
+      ctx.fillStyle = accentGradient;
+      materialRect(ctx, 80, 80, 1040, 4, 24);
+      ctx.fill();
+      
+      // Typography hierarchy - Material Design
+      ctx.fillStyle = '#f8fafc';
+      ctx.font = '700 48px "Inter", "Segoe UI", sans-serif';
+      ctx.textAlign = 'left';
+      ctx.letterSpacing = '-0.02em';
+      ctx.fillText('Relatório de Perfomance', 120, 160);
+      
+      // Subtitle with proper contrast
+      const nomeCliente = dados.get('Nome') ? dados.get('Nome').trim() : 'Cliente';
+      ctx.font = '400 24px "Inter", "Segoe UI", sans-serif';
+      ctx.fillStyle = '#cbd5e1';
+      ctx.fillText(`${nomeCliente}`, 120, 200);
+      
+      // Metadata with secondary text color
+      ctx.font = '400 18px "Inter", "Segoe UI", sans-serif';
+      ctx.fillStyle = '#94a3b8';
+      ctx.textAlign = 'right';
+      const dataAtual = new Date().toLocaleDateString('pt-BR', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+      ctx.fillText(dataAtual, 1080, 240);
+      
+      // Status indicator
+      ctx.fillStyle = '#10b981';
+      ctx.beginPath();
+      ctx.arc(120, 240, 6, 0, 2 * Math.PI);
+      ctx.fill();
+      ctx.fillStyle = '#10b981';
+      ctx.font = '500 16px "Inter", "Segoe UI", sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('Relatório Ativo', 140, 245);
+    }
+
+    function drawLiquidGlassCards(ctx, dados) {
+      const metricas = [
+        { campo: 'Período', cor: '#7c3aed', categoria: 'temporal' },
+        { campo: 'Alcance', cor: '#9333ea', categoria: 'reach' },
+        { campo: 'Visitas ao perfil', cor: '#a855f7', categoria: 'engagement' },
+        { campo: 'Conversas iniciadas', cor: '#8b5cf6', categoria: 'engagement' },
+        { campo: 'Custo por conversas', cor: '#7c3aed', categoria: 'cost' },
+        { campo: 'Compras efetuadas', cor: '#6d28d9', categoria: 'conversion' },
+        { campo: 'Custo por Compras', cor: '#5b21b6', categoria: 'cost' },
+        { campo: 'Adições ao Carrinho', cor: '#a855f7', categoria: 'conversion' },
+        { campo: 'Custo por adição', cor: '#8b5cf6', categoria: 'cost' },
+        { campo: 'CTR', cor: '#9333ea', categoria: 'performance' },
+        { campo: 'CPM', cor: '#7c3aed', categoria: 'cost' },
+        { campo: 'CPC', cor: '#6d28d9', categoria: 'cost' },
+        { campo: 'Valor investido', cor: '#5b21b6', categoria: 'investment' }
+      ];
+      
+      let yPosition = 340;
+      const cardHeight = 100;
+      const cardMargin = 24;
+      let cardsInRow = 0;
+      const maxCardsPerRow = 2;
+      const cardWidth = 500;
+      
+      metricas.forEach((metrica) => {
+        const valor = dados.get(metrica.campo);
+        if (valor && valor.trim() !== "") {
+          const xPosition = 80 + (cardsInRow * (cardWidth + 40));
+          
+          // Liquid glass card background with elevation
+          ctx.fillStyle = 'rgba(15, 10, 30, 0.75)';
+          ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
+          ctx.shadowBlur = 30;
+          ctx.shadowOffsetY = 15;
+          materialRect(ctx, xPosition, yPosition, cardWidth, cardHeight, 16);
+          ctx.fill();
+          
+          // Glass border with subtle glow
+          ctx.shadowBlur = 20;
+          ctx.shadowColor = metrica.cor + '40';
+          ctx.strokeStyle = 'rgba(147, 51, 234, 0.3)';
+          ctx.lineWidth = 1;
+          materialRect(ctx, xPosition, yPosition, cardWidth, cardHeight, 16);
+          ctx.stroke();
+          
+          // Reset shadow
+          ctx.shadowColor = 'transparent';
+          ctx.shadowBlur = 0;
+          ctx.shadowOffsetY = 0;
+          
+          // Material accent bar
+          ctx.fillStyle = metrica.cor;
+          materialRect(ctx, xPosition, yPosition, 4, cardHeight, 16);
+          ctx.fill();
+          
+          // Liquid glass highlight effect
+          const highlightGradient = ctx.createLinearGradient(
+            xPosition, yPosition, 
+            xPosition, yPosition + 40
+          );
+          highlightGradient.addColorStop(0, 'rgba(255, 255, 255, 0.1)');
+          highlightGradient.addColorStop(1, 'rgba(255, 255, 255, 0.02)');
+          ctx.fillStyle = highlightGradient;
+          materialRect(ctx, xPosition, yPosition, cardWidth, 40, 16);
+          ctx.fill();
+          
+          // Typography with Material Design scale
+          ctx.fillStyle = '#e2e8f0';
+          ctx.font = '500 20px "Inter", "Segoe UI", sans-serif';
+          ctx.textAlign = 'left';
+          ctx.fillText(metrica.campo, xPosition + 24, yPosition + 35);
+          
+          // Value with proper emphasis
+          ctx.fillStyle = '#f1f5f9';
+          ctx.font = '600 28px "Inter", "Segoe UI", sans-serif';
+          ctx.fillText(valor, xPosition + 24, yPosition + 70);
+          
+          // Category indicator
+          ctx.fillStyle = metrica.cor + '60';
+          ctx.beginPath();
+          ctx.arc(xPosition + cardWidth - 30, yPosition + 30, 8, 0, 2 * Math.PI);
+          ctx.fill();
+          
+          cardsInRow++;
+          if (cardsInRow >= maxCardsPerRow) {
+            cardsInRow = 0;
+            yPosition += cardHeight + cardMargin;
+          }
+        }
+      });
+    }
+
+    function drawCorporateFooter(ctx) {
+      const footerY = 1480;
+      
+      // Material Design elevated footer
+      ctx.fillStyle = 'rgba(10, 5, 20, 0.85)';
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
+      ctx.shadowBlur = 30;
+      ctx.shadowOffsetY = -10;
+      materialRect(ctx, 80, footerY, 1040, 100, 16);
+      ctx.fill();
+      
+      // Liquid glass border
+      ctx.shadowBlur = 0;
+      ctx.shadowOffsetY = 0;
+      ctx.strokeStyle = 'rgba(147, 51, 234, 0.3)';
+      ctx.lineWidth = 1;
+      materialRect(ctx, 80, footerY, 1040, 100, 16);
+      ctx.stroke();
+      
+      // Accent line
+      const footerGradient = ctx.createLinearGradient(80, footerY, 1120, footerY);
+      footerGradient.addColorStop(0, 'rgba(147, 51, 234, 0)');
+      footerGradient.addColorStop(0.5, '#9333ea');
+      footerGradient.addColorStop(1, 'rgba(147, 51, 234, 0)');
+      ctx.fillStyle = footerGradient;
+      materialRect(ctx, 80, footerY, 1040, 2, 16);
+      ctx.fill();
+      
+      // Corporate branding
+      ctx.fillStyle = '#e2e8f0';
+      ctx.font = '600 22px "Inter", "Segoe UI", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('ProROI - ANALYTICS DASHBOARD', 600, footerY + 40);
+      
+      ctx.font = '400 16px "Inter", "Segoe UI", sans-serif';
+      ctx.fillStyle = '#94a3b8';
+      ctx.fillText('Relatório de perído do cliente - ProROI', 600, footerY + 65);
+      
+      // Version indicator
+      ctx.font = '400 14px "Inter", "Segoe UI", sans-serif';
+      ctx.fillStyle = '#64748b';
+      ctx.textAlign = 'right';
+      ctx.fillText('v2.0', 1100, footerY + 85);
+    }
+
+    function materialRect(ctx, x, y, width, height, radius) {
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.lineTo(x + width - radius, y);
+      ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+      ctx.lineTo(x + width, y + height - radius);
+      ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+      ctx.lineTo(x + radius, y + height);
+      ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+      ctx.lineTo(x, y + radius);
+      ctx.quadraticCurveTo(x, y, x + radius, y);
+      ctx.closePath();
+    }
+
+    function copiarRelatorio() {
+      if (!window.relatorioParaCopia) return;
+      
+      navigator.clipboard.writeText(window.relatorioParaCopia).then(() => {
+        const btn = document.getElementById('copyBtn');
+        btn.textContent = '✅ Copiado!';
+        btn.classList.add('copy-success');
+        
+        setTimeout(() => {
+          btn.textContent = '📋 Copiar';
+          btn.classList.remove('copy-success');
+        }, 2000);
+      }).catch(err => {
+        console.error('Erro ao copiar: ', err);
+        
+        // Fallback para navegadores mais antigos
+        const textArea = document.createElement('textarea');
+        textArea.value = window.relatorioParaCopia;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        
+        const btn = document.getElementById('copyBtn');
+        btn.textContent = '✅ Copiado!';
+        btn.classList.add('copy-success');
+        
+        setTimeout(() => {
+          btn.textContent = '📋 Copiar';
+          btn.classList.remove('copy-success');
+        }, 2000);
+      });
+    }
+
+    // Função para baixar o relatório
+    function downloadReport(canvas, nomeCliente) {
+      canvas.toBlob(function (blob) {
+        if (blob) {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          const fileName = nomeCliente ? 
+            `relatorio_performance_${nomeCliente.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.png` :
+            `relatorio_performance_${new Date().toISOString().split('T')[0]}.png`;
+          a.download = fileName;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        }
+      }, 'image/png');
+    }
+
+    // Modificar a função gerarRelatorioVisual para usar a nova função de download
+    function gerarRelatorioVisual() {
+      const form = document.getElementById('formulario');
+      const dados = new FormData(form);
+      
+      let hasData = false;
+      for (let [campo, valor] of dados.entries()) {
+        if (valor.trim() !== "") {
+          hasData = true;
+          break;
+        }
+      }
+      
+      if (!hasData) {
+        alert('Por favor, preencha pelo menos um campo antes de gerar o relatório visual.');
+        return;
+      }
+      
+      const canvas = document.getElementById('reportCanvas');
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      const img = new Image();
+      const nomeCliente = dados.get('Nome') ? dados.get('Nome').trim() : '';
+      
+      img.onload = function () {
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        desenharConteudoRelatorioModerno(dados, ctx, canvas);
+        setTimeout(() => downloadReport(canvas, nomeCliente), 500);
+      };
+      
+      img.onerror = function() {
+        const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+        gradient.addColorStop(0, '#667eea');
+        gradient.addColorStop(1, '#764ba2');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        desenharConteudoRelatorioModerno(dados, ctx, canvas);
+        setTimeout(() => downloadReport(canvas, nomeCliente), 500);
+      };
+      
+      img.src = 'img/bg.png';
+    }
+  </script>
+</body>
+</html>
